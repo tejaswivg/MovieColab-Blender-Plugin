@@ -352,6 +352,21 @@ class Tasks(bpy.types.Operator):
               
         return{'FINISHED'}
 
+class ExportGLB(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "object.export_glb"
+    bl_label = "export glb"
+    bl_options = {"UNDO"}
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        filepath = os.path.join(directory, ("test.glb"))
+        bpy.ops.export_scene.gltf(filepath=filepath)
+        MessageBox(f'exported to {filepath}')
+        return {"FINISHED"}
+
 class Render(bpy.types.Operator):
     """Tooltip"""
     bl_idname = "object.render_scene"
@@ -563,6 +578,9 @@ class LoginPanel(bpy.types.Panel):
         row=layout.row()
         row.operator(Tasks.bl_idname, text="Get Tasks Assigned")
         layout.prop(mycred,"Task")
+
+        row = layout.row()
+        row.operator(ExportGLB.bl_idname, text="Export selection to glb")
         
         row=layout.row()
         row.operator(Render.bl_idname, text="Render")
@@ -766,7 +784,7 @@ class AssetPanel(bpy.types.Panel):
         row.operator(upload_asset_sequence.bl_idname, text="Upload Sequence")
 
                    
-classes = [Credentials,LoginPanel,AssetPanel,AddUser,ProjectInfo,Sequences,Assets,Asset_Version,Render_asset,upload_asset_sequence,Shot_list,Tasks,Render,Create_Shot,Render_animation,Create_Shot_sequence,LogOut]
+classes = [Credentials,LoginPanel,AssetPanel,AddUser,ProjectInfo,Sequences,Assets,Asset_Version,Render_asset,upload_asset_sequence,Shot_list,Tasks,ExportGLB,Render,Create_Shot,Render_animation,Create_Shot_sequence,LogOut]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
