@@ -89,7 +89,7 @@ def get_Shot_version(shot_id):
     r=requests.get(MOVCOLAB_URL+"trackables/shot-version?shot="+str(shot_id),headers={'Authorization':'Bearer '+x})
     return(r.json())
 
-def create_shot_SS(name,shot):
+def create_shot_SS(name,shot, isglb=False):
     data={ 
 
         "name": "String", 
@@ -98,9 +98,14 @@ def create_shot_SS(name,shot):
     }
     data["name"]=name
     data["shot"]=shot
-    ss_directory=str(directory)+"\\"+str(name)+'.png'
+    if(isglb == False):
+        ss_directory=str(directory)+"\\"+str(name)+'.png'
+    else:
+        ss_directory=str(directory)+"\\"+str(name)+'.glb'
+
     print(ss_directory)
     
+    MessageBox(ss_directory)
     if(os.path.isfile(ss_directory)):
         
       files=[('file',(ss_directory,open(ss_directory,'rb')))]
@@ -321,6 +326,46 @@ class Create_Shot_sequence(bpy.types.Operator):
            
         else:
             MessageBox("No shots to upload","Sequence Shot version upload")
+        return{'FINISHED'}
+
+class Create_GLB(bpy.types.Operator):
+    """Tooltip"""
+    bl_idname = "object.create_glb"
+    bl_label = "Create glb"
+    bl_options = {"UNDO"}
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        mycred=bpy.context.scene.cred
+        if(mycred.Shot!=""):
+           shot=shots['results'][shot_dict[mycred.Shot]]['id']
+           version=get_Shot_version(shots['results'][shot_dict[mycred.Shot]]['id'])
+        
+           if(version['count']!=0):
+              index=version['count']-1
+              version_name=version['results'][index]['name']
+              shot_num=int(version_name[version_name.find('v')+2:])+1
+              name_SS=mycred.Shot.replace(" ","_")+'.'+mycred.Task.replace(" ","_")+'.'+'v'+(3-len(str(shot_num)))*"0"+str(shot_num)
+              name_SS= mycred.Shot
+       
+           else:
+              name_SS=mycred.Shot.replace(" ","_")+'.'+mycred.Task.replace(" ","_")+'.'+"v001"
+           
+           statuscode=create_shot_SS(name_SS,shot,True)
+        
+           if(statuscode==401):
+              MessageBox("Failed","Sequence Shot version upload",'ERROR')
+        
+           elif(statuscode==201):
+              MessageBox("Success","Sequence Shot version upload")
+              
+           elif(statuscode==101):
+              MessageBox("No such file in the directory ","Sequence Shot version upload")
+        else:
+              MessageBox("No shots to upload","Sequence Shot version upload")
+              
         return{'FINISHED'}
 
 class Tasks(bpy.types.Operator):
@@ -581,6 +626,9 @@ class LoginPanel(bpy.types.Panel):
 
         row = layout.row()
         row.operator(ExportGLB.bl_idname, text="Export selection to glb")
+
+        row=layout.row()
+        row.operator(Create_GLB.bl_idname, text="Upload GLB")
         
         row=layout.row()
         row.operator(Render.bl_idname, text="Render")
@@ -784,7 +832,7 @@ class AssetPanel(bpy.types.Panel):
         row.operator(upload_asset_sequence.bl_idname, text="Upload Sequence")
 
                    
-classes = [Credentials,LoginPanel,AssetPanel,AddUser,ProjectInfo,Sequences,Assets,Asset_Version,Render_asset,upload_asset_sequence,Shot_list,Tasks,ExportGLB,Render,Create_Shot,Render_animation,Create_Shot_sequence,LogOut]
+classes = [Credentials,LoginPanel,AssetPanel,AddUser,ProjectInfo,Sequences,Assets,Asset_Version,Render_asset,upload_asset_sequence,Shot_list,Tasks,ExportGLB,Render,Create_GLB, Create_Shot,Render_animation,Create_Shot_sequence,LogOut]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
